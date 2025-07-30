@@ -23,9 +23,10 @@ import pandas
 from pathlib import Path
 
 from pypaimon.api import ConfigResponse
-from pypaimon.api.api_response import TableSchema, TableMetadata
 from pypaimon.api.auth import BearTokenAuthProvider
 from pypaimon.api.data_types import DataField, AtomicType
+from pypaimon.schema.table_schema import TableSchema
+from pypaimon.catalog.table_metadata import TableMetadata
 from pypaimon.pvfs import PaimonVirtualFileSystem
 from pypaimon.tests.api_test import RESTCatalogServer
 
@@ -56,7 +57,8 @@ class PVFSTestCase(unittest.TestCase):
             'warehouse': 'test_warehouse',
             'dlf.region': 'cn-hangzhou',
             "token.provider": "bear",
-            'token': self.token
+            'token': self.token,
+            'cache-enabled': True
         }
         self.pvfs = PaimonVirtualFileSystem(options)
         self.database = 'test_database'
@@ -68,7 +70,8 @@ class PVFSTestCase(unittest.TestCase):
             DataField(0, "id", AtomicType('INT'), 'id'),
             DataField(1, "name", AtomicType('STRING'), 'name')
         ]
-        schema = TableSchema(len(data_fields), data_fields, len(data_fields), [], [], {}, "")
+        schema = TableSchema(TableSchema.CURRENT_VERSION, len(data_fields), data_fields, len(data_fields),
+                             [], [], {}, "")
         self.server.database_store.update(self.test_databases)
         self.test_tables = {
             f"{self.database}.{self.table}": TableMetadata(uuid=str(uuid.uuid4()), is_external=True, schema=schema),

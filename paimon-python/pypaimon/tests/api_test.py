@@ -21,15 +21,18 @@ import unittest
 
 import pypaimon.api as api
 from .rest_server import RESTCatalogServer
-from ..api.api_response import (ConfigResponse, TableMetadata, TableSchema, DataField)
+from ..api.api_response import (ConfigResponse)
 from ..api import RESTApi
 from ..api.auth import BearTokenAuthProvider
+from ..api.identifier import Identifier
 from ..api.options import Options
 from ..api.rest_json import JSON
+from pypaimon.schema.table_schema import TableSchema
 from ..api.token_loader import DLFTokenLoaderFactory, DLFToken
-from ..api.typedef import Identifier
-from ..api.data_types import AtomicInteger, DataTypeParser, AtomicType, ArrayType, MapType, RowType
+
+from ..api.data_types import AtomicInteger, DataTypeParser, AtomicType, ArrayType, MapType, RowType, DataField
 from ..catalog.catalog_context import CatalogContext
+from ..catalog.table_metadata import TableMetadata
 from ..rest.rest_catalog import RESTCatalog
 
 
@@ -154,7 +157,8 @@ class ApiTestCase(unittest.TestCase):
                                               MapType(False, AtomicType('INT'), AtomicType('INT'))),
                           'desc  arr11'),
             ]
-            schema = TableSchema(len(data_fields), data_fields, len(data_fields), [], [], {}, "")
+            schema = TableSchema(TableSchema.CURRENT_VERSION, len(data_fields), data_fields, len(data_fields),
+                                 [], [], {}, "")
             test_tables = {
                 "default.user": TableMetadata(uuid=str(uuid.uuid4()), is_external=True, schema=schema),
             }
@@ -210,7 +214,8 @@ class ApiTestCase(unittest.TestCase):
                                               MapType(False, AtomicType('INT'), AtomicType('INT'))),
                           'desc  arr11'),
             ]
-            schema = TableSchema(len(data_fields), data_fields, len(data_fields), [], [], {}, "")
+            schema = TableSchema(TableSchema.CURRENT_VERSION, len(data_fields), data_fields, len(data_fields),
+                                 [], [], {}, "")
             test_tables = {
                 "default.user": TableMetadata(uuid=str(uuid.uuid4()), is_external=True, schema=schema),
             }
@@ -226,6 +231,8 @@ class ApiTestCase(unittest.TestCase):
             rest_catalog = RESTCatalog(CatalogContext.create_from_options(Options(options)))
             self.assertSetEqual(set(rest_catalog.list_databases()), {*test_databases})
             self.assertEqual(rest_catalog.get_database('default').name, test_databases.get('default').name)
+            table = rest_catalog.get_table(Identifier.from_string('default.user'))
+            self.assertEqual(table.identifier.get_full_name(), 'default.user')
         finally:
             # Shutdown server
             server.shutdown()

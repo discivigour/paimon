@@ -28,12 +28,13 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
 import pypaimon.api as api
-from ..api import RenameTableRequest, CreateTableRequest, CreateDatabaseRequest
+from ..api import RenameTableRequest, CreateTableRequest, CreateDatabaseRequest, Identifier
 from ..api.api_response import (ConfigResponse, ListDatabasesResponse, GetDatabaseResponse,
-                                TableMetadata, Schema, GetTableResponse, ListTablesResponse,
-                                TableSchema, RESTResponse, PagedList)
+                                Schema, GetTableResponse, ListTablesResponse,
+                                RESTResponse, PagedList)
 from ..api.rest_json import JSON
-from ..api.typedef import Identifier
+from pypaimon.schema.table_schema import TableSchema
+from ..catalog.table_metadata import TableMetadata
 
 
 @dataclass
@@ -641,6 +642,7 @@ class RESTCatalogServer:
         """Create table metadata"""
         options = schema.options.copy()
         table_schema = TableSchema(
+            version=TableSchema.CURRENT_VERSION,
             id=schema_id,
             fields=schema.fields,
             highest_field_id=len(schema.fields) - 1,
