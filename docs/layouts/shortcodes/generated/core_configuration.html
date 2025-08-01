@@ -273,6 +273,12 @@ under the License.
             <td>Percentage flexibility while comparing sorted run size for changelog mode table. If the candidate sorted run(s) size is 1% smaller than the next sorted run's size, then include next sorted run into this candidate set.</td>
         </tr>
         <tr>
+            <td><h5>compaction.total-size-threshold</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>MemorySize</td>
+            <td>When total size is smaller than this threshold, force a full compaction.</td>
+        </tr>
+        <tr>
             <td><h5>consumer-id</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>
@@ -1198,7 +1204,7 @@ If the data size allocated for the sorting task is uneven,which may lead to perf
             <td><h5>type</h5></td>
             <td style="word-wrap: break-word;">table</td>
             <td><p>Enum</p></td>
-            <td>Type of the table.<br /><br />Possible values:<ul><li>"table": Normal Paimon table.</li><li>"format-table": A file format table refers to a directory that contains multiple files of the same format.</li><li>"materialized-table": A materialized table combines normal Paimon table and materialized SQL.</li><li>"object-table": An object table combines normal Paimon table and object location.</li></ul></td>
+            <td>Type of the table.<br /><br />Possible values:<ul><li>"table": Normal Paimon table.</li><li>"format-table": A file format table refers to a directory that contains multiple files of the same format.</li><li>"materialized-table": A materialized table combines normal Paimon table and materialized SQL.</li><li>"object-table": An object table combines normal Paimon table and object location.</li><li>"lance-table": A lance table, see 'https://lancedb.github.io/lance/'.</li></ul></td>
         </tr>
         <tr>
             <td><h5>upsert-key</h5></td>
@@ -1241,6 +1247,12 @@ If the data size allocated for the sorting task is uneven,which may lead to perf
             <td style="word-wrap: break-word;">false</td>
             <td>Boolean</td>
             <td>If set to true, compactions and snapshot expiration will be skipped. This option is used along with dedicated compact jobs.</td>
+        </tr>
+        <tr>
+            <td><h5>write.batch-memory</h5></td>
+            <td style="word-wrap: break-word;">128 mb</td>
+            <td>MemorySize</td>
+            <td>Write batch memory for any file format if it supports.</td>
         </tr>
         <tr>
             <td><h5>write.batch-size</h5></td>

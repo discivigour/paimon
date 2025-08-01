@@ -27,14 +27,15 @@ from pypaimon.api.api_response import (
     GetDatabaseResponse,
     ConfigResponse,
     PagedResponse,
-    GetTableTokenResponse, Schema,
+    GetTableTokenResponse,
 )
 from pypaimon.api.api_resquest import CreateDatabaseRequest, AlterDatabaseRequest, RenameTableRequest, \
     CreateTableRequest
-from pypaimon.api.config import RESTCatalogOptions
+from pypaimon.common.config import CatalogOptions
 from pypaimon.api.client import HttpClient
-from pypaimon.api.identifier import Identifier
+from pypaimon.common.identifier import Identifier
 from pypaimon.api.typedef import T
+from pypaimon.schema.schema import Schema
 
 
 class RESTException(Exception):
@@ -89,7 +90,7 @@ class ResourcePaths:
     @classmethod
     def for_catalog_properties(
             cls, options: dict[str, str]) -> "ResourcePaths":
-        prefix = options.get(RESTCatalogOptions.PREFIX, "")
+        prefix = options.get(CatalogOptions.PREFIX, "")
         return cls(prefix)
 
     @staticmethod
@@ -131,15 +132,15 @@ class RESTApi:
 
     def __init__(self, options: Dict[str, str], config_required: bool = True):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.client = HttpClient(options.get(RESTCatalogOptions.URI))
+        self.client = HttpClient(options.get(CatalogOptions.URI))
         auth_provider = AuthProviderFactory.create_auth_provider(options)
         base_headers = RESTUtil.extract_prefix_map(options, self.HEADER_PREFIX)
 
         if config_required:
-            warehouse = options.get(RESTCatalogOptions.WAREHOUSE)
+            warehouse = options.get(CatalogOptions.WAREHOUSE)
             query_params = {}
             if warehouse:
-                query_params[RESTCatalogOptions.WAREHOUSE] = RESTUtil.encode_string(
+                query_params[CatalogOptions.WAREHOUSE] = RESTUtil.encode_string(
                     warehouse)
 
             config_response = self.client.get_with_params(

@@ -18,11 +18,15 @@
 
 from pathlib import Path
 
-from pypaimon.api.identifier import Identifier
+from pypaimon import Table
+from pypaimon.common.core_options import CoreOptions
+from pypaimon.common.identifier import Identifier
 from pypaimon.schema.table_schema import TableSchema
 from pypaimon.common.file_io import FileIO
 from pypaimon.schema.schema_manager import SchemaManager
-from pypaimon.table.table import Table
+from pypaimon.table.bucket_mode import BucketMode
+from pypaimon.write.batch_write_builder import BatchWriteBuilder
+from pypaimon.write.row_key_extractor import RowKeyExtractor, FixedBucketRowKeyExtractor, UnawareBucketRowKeyExtractor
 
 
 class FileStoreTable(Table):
@@ -40,3 +44,34 @@ class FileStoreTable(Table):
         self.table_schema = table_schema
         self.schema_manager = SchemaManager(file_io, table_path)
         self.is_primary_key_table = bool(self.primary_keys)
+
+    def bucket_mode(self) -> BucketMode:
+        if self.is_primary_key_table:
+            if self.primary_keys == self.partition_keys:
+                return BucketMode.CROSS_PARTITION
+            if self.options.get(CoreOptions.BUCKET, -1) == -1:
+                return BucketMode.HASH_DYNAMIC
+            else:
+                return BucketMode.HASH_FIXED
+        else:
+            if self.options.get(CoreOptions.BUCKET, -1) == -1:
+                return BucketMode.BUCKET_UNAWARE
+            else:
+                return BucketMode.HASH_FIXED
+
+    def new_read_builder(self) -> 'ReadBuilder':
+        pass
+
+    def new_batch_write_builder(self) -> BatchWriteBuilder:
+        return BatchWriteBuilder(self)
+
+    def create_row_key_extractor(self) -> RowKeyExtractor:
+        bucket_mode = self.bucket_mode()
+        if bucket_mode == BucketMode.HASH_FIXED:
+            return FixedBucketRowKeyExtractor(self.table_schema)
+        elif bucket_mode == BucketMode.BUCKET_UNAWARE:
+            return UnawareBucketRowKeyExtractor(self.table_schema)
+        elif bucket_mode == BucketMode.HASH_DYNAMIC or bucket_mode == BucketMode.CROSS_PARTITION:
+            raise ValueError(f"Unsupported bucket mode {bucket_mode} yet")
+        else:
+            raise ValueError(f"Unsupported bucket mode: {bucket_mode}")

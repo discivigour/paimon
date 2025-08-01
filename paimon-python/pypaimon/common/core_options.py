@@ -42,3 +42,7 @@ class CoreOptions(str, Enum):
     FILE_COMPRESSION_PER_LEVEL = "file.compression.per.level"
     FILE_FORMAT_PER_LEVEL = "file.format.per.level"
     FILE_BLOCK_SIZE = "file.block-size"
+    # Scan options
+    SCAN_FALLBACK_BRANCH = "scan.fallback-branch"
+    # commit options
+    COMMIT_USER_PREFIX = "commit.user-prefix"

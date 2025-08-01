@@ -18,10 +18,9 @@ limitations under the License.
 from pathlib import Path
 from typing import Callable, Any
 
-from pypaimon.api.core_options import CoreOptions
-from pypaimon.api.identifier import Identifier
+from pypaimon.common.core_options import CoreOptions
+from pypaimon.common.identifier import Identifier
 
-from pypaimon.catalog.catalog import Catalog
 from pypaimon.catalog.table_metadata import TableMetadata
 from pypaimon.table.catalog_environment import CatalogEnvironment
 from pypaimon.table.file_store_table import FileStoreTable
