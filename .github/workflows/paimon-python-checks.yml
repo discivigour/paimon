@@ -64,6 +64,7 @@ jobs:
         run: |
           if [[ "${{ matrix.python-version }}" == "3.6.15" ]]; then
             python -m pip install --upgrade pip==21.3.1
+            python --version
             python -m pip install -q readerwriterlock==1.0.9 'fsspec==2021.10.1' 'cachetools==4.2.4' 'ossfs==2021.8.0' pyarrow==6.0.1 pandas==1.1.5 'polars==0.9.12' 'fastavro==1.4.7' zstandard==0.19.0 dataclasses==0.8.0 flake8 pytest py4j==0.10.9.9 requests 2>&1 >/dev/null
           else
             python -m pip install --upgrade pip
