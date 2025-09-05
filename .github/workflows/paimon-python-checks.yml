@@ -50,6 +50,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Install system dependencies
+        shell: bash
         run: |
           apt-get update && apt-get install -y \
             build-essential \
@@ -61,6 +62,7 @@ jobs:
         run: python --version
       
       - name: Install Python dependencies
+        shell: bash
         run: |
           if [[ "${{ matrix.python-version }}" == "3.6.15" ]]; then
             python -m pip install --upgrade pip==21.3.1
