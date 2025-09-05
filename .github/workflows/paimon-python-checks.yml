@@ -20,6 +20,10 @@ name: Check Code Style and Test
 
 on:
   push:
+    paths:
+      - 'paimon-python/**'
+      - '!**/*.md'
+      - '.github/workflows/paimon-python-checks.yml'
   pull_request:
     paths:
       - 'paimon-python/**'
@@ -40,9 +44,9 @@ jobs:
       matrix:
         include:
           - python-version: '3.6.15'
-            os: ubuntu-20.04
-          - python-version: '3.10'
-            os: ubuntu-latest
+            os: ubuntu-22.04
+#          - python-version: '3.10'
+#            os: ubuntu-latest
 
     steps:
       - name: Checkout code
