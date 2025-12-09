@@ -72,6 +72,11 @@ public class FileIndexReaderWrapper implements GlobalIndexReader {
     }
 
     @Override
+    public Optional<GlobalIndexResult> visitLike(FieldRef fieldRef, Object literal) {
+        return transform.apply(reader.visitLike(fieldRef, literal));
+    }
+
+    @Override
     public Optional<GlobalIndexResult> visitLessThan(FieldRef fieldRef, Object literal) {
         return Optional.ofNullable(transform.apply(reader.visitLessThan(fieldRef, literal)));
     }
