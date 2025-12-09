@@ -770,12 +770,31 @@ public class SnapshotManager implements Serializable {
     }
 
     public static Snapshot tryFromPath(FileIO fileIO, Path path) throws FileNotFoundException {
-        try {
-            return Snapshot.fromJson(fileIO.readFileUtf8(path));
-        } catch (FileNotFoundException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new RuntimeException("Fails to read snapshot from path " + path, e);
+        int retryNumber = 0;
+        Exception exception = null;
+        while (retryNumber++ < 10) {
+            String content;
+            try {
+                content = fileIO.readFileUtf8(path);
+            } catch (FileNotFoundException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new RuntimeException("Fails to read snapshot from path " + path, e);
+            }
+
+            try {
+                return Snapshot.fromJson(content);
+            } catch (Exception e) {
+                // retry
+                exception = e;
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                }
+            }
         }
+        throw new RuntimeException("Retry fail after 10 times", exception);
     }
 }
