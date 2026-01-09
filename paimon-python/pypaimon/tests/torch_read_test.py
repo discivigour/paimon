@@ -367,7 +367,7 @@ class TorchReadTest(unittest.TestCase):
         table = self.catalog.get_table('default.test_multi_splits1')
         self._write_test_table(table)
 
-        num_workers = 0
+        num_workers = 2
         description = "aaa"
 
         read_builder = table.new_read_builder()
