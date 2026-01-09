@@ -104,7 +104,7 @@ class TorchReadTest(unittest.TestCase):
         table = self.catalog.get_table('default.test_torch_read1')
         self._write_test_table(table)
 
-        read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
+        read_builder = table.new_read_builder()
         table_scan = read_builder.new_scan()
         table_read = read_builder.new_read()
         splits = table_scan.plan().splits()
@@ -314,7 +314,7 @@ class TorchReadTest(unittest.TestCase):
     #     print("✓ All test cases passed!")
     #     print(f"{'=' * 60}\n")
 
-    def test_torch_read_with_various_splits_and_workers1(self):
+    def test_torch_read_with1(self):
         """Test torch read with various combinations of splits and num_workers."""
 
         # Create a partitioned table to generate multiple splits
@@ -367,7 +367,7 @@ class TorchReadTest(unittest.TestCase):
         print("✓ All test cases passed!")
         print(f"{'=' * 60}\n")
 
-    def test_torch_read_with_various_splits_and_workers(self):
+    def test_torch_read_with_v(self):
         """Test torch read with various combinations of splits and num_workers."""
 
         # Create a partitioned table to generate multiple splits
