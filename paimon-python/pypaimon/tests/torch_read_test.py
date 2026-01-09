@@ -163,7 +163,7 @@ class TorchReadTest(unittest.TestCase):
         dataloader = DataLoader(
             result,
             batch_size=1,
-            num_workers=0,
+            num_workers=4,
             shuffle=False
         )
 
