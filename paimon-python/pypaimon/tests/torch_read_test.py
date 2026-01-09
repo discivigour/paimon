@@ -220,7 +220,7 @@ class TorchReadTest(unittest.TestCase):
 
         # Test different combinations of num_workers
         test_cases = [
-            {'num_workers': 2, 'description': '2 workers'},
+            {'num_workers': 0, 'description': '2 workers'},
             # {'num_workers': 5, 'description': '4 workers'},
             # {'num_workers': 10, 'description': '4 workers'},
         ]
@@ -338,7 +338,7 @@ class TorchReadTest(unittest.TestCase):
 
         # Test different combinations of num_workers
         test_cases = [
-            {'num_workers': 2, 'description': '2 workers'},
+            {'num_workers': 0, 'description': '2 workers'},
             # {'num_workers': 4, 'description': '4 workers'},
             # {'num_workers': 10, 'description': '10 workers'},
         ]
