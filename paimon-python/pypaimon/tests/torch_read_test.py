@@ -385,7 +385,7 @@ class TorchReadTest(unittest.TestCase):
 
         print(f"✓ Test passed: Successfully read {len(all_user_ids)} rows with correct data")
 
-    def test_torch_read_with_v(self):
+    def test_torch_read5(self):
         schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
         self.catalog.create_table('default.test_torch_read5', schema, False)
         table = self.catalog.get_table('default.test_torch_read5')
