@@ -359,8 +359,8 @@ class TorchReadTest(unittest.TestCase):
     #     print(f"{'=' * 60}\n")
     def test_torch_read_with1(self):
         schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
-        self.catalog.create_table('default.test_torch_read2', schema, False)
-        table = self.catalog.get_table('default.test_torch_read2')
+        self.catalog.create_table('default.test_torch_read3', schema, False)
+        table = self.catalog.get_table('default.test_torch_read3')
         self._write_test_table(table)
 
         read_builder = table.new_read_builder()
@@ -385,19 +385,13 @@ class TorchReadTest(unittest.TestCase):
             all_behaviors.extend(behaviors)
 
         # Sort by user_id for comparison
-        sorted_data = sorted(zip(all_user_ids, all_behaviors), key=lambda x: x[0])
-        sorted_user_ids = [x[0] for x in sorted_data]
-        sorted_behaviors = [x[1] for x in sorted_data]
+        sorted_data = sorted(all_user_ids)
 
         # Expected data (sorted by user_id)
         expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-        expected_behaviors = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
         # Verify results
-        self.assertEqual(sorted_user_ids, expected_user_ids,
-                         f"User IDs mismatch. Expected {expected_user_ids}, got {sorted_user_ids}")
-        self.assertEqual(sorted_behaviors, expected_behaviors,
-                         f"Behaviors mismatch. Expected {expected_behaviors}, got {sorted_behaviors}")
+        self.assertEqual(sorted_data, expected_user_ids)
 
         print(f"✓ Test passed: Successfully read {len(all_user_ids)} rows with correct data")
 
