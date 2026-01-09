@@ -368,7 +368,6 @@ class TorchReadTest(unittest.TestCase):
         self._write_test_table(table)
 
         num_workers = 2
-        description = "aaa"
 
         read_builder = table.new_read_builder()
         table_scan = read_builder.new_scan()
@@ -389,10 +388,9 @@ class TorchReadTest(unittest.TestCase):
             all_user_ids.extend(user_ids)
 
         # Verify all data is read
-        all_user_ids.sort()
+        a = sorted(all_user_ids)
         expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.assertEqual(all_user_ids, expected_user_ids,
-                         f"{description}: User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+        self.assertEqual(a, expected_user_ids)
 
     def test_torch_read_with_v(self):
         """Test torch read with various combinations of splits and num_workers."""
