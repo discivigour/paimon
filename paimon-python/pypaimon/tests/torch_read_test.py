@@ -270,6 +270,59 @@ class TorchReadTest(unittest.TestCase):
     #     print("✓ All test cases passed!")
     #     print(f"{'=' * 60}\n")
 
+    def test_torch_read_with_various_splits_and_workers1(self):
+        """Test torch read with various combinations of splits and num_workers."""
+
+        # Create a partitioned table to generate multiple splits
+        schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
+        self.catalog.create_table('default.test_multi_splits1', schema, False)
+        table = self.catalog.get_table('default.test_multi_splits1')
+        self._write_test_table(table)
+
+        num_workers = 2
+        description = "aaa"
+
+        read_builder = table.new_read_builder()
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+
+        print(f"\n{'=' * 60}")
+        print(f"Testing: {description}")
+        print(f"Total splits: {len(splits)}")
+        print(f"Num workers: {num_workers}")
+        print(f"{'=' * 60}")
+
+        # Create dataset and dataloader
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=num_workers,
+            shuffle=False
+        )
+
+        # Collect all data
+        all_user_ids = []
+        batch_count = 0
+        for batch_idx, batch_data in enumerate(dataloader):
+            batch_count += 1
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+            print(f"  Batch {batch_idx}: user_ids={user_ids}")
+
+        # Verify all data is read
+        all_user_ids.sort()
+        expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.assertEqual(all_user_ids, expected_user_ids,
+                         f"{description}: User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+
+        print(f"✓ {description}: Successfully read {len(all_user_ids)} rows in {batch_count} batches")
+
+        print(f"\n{'=' * 60}")
+        print("✓ All test cases passed!")
+        print(f"{'=' * 60}\n")
+
     def test_torch_read_with_various_splits_and_workers(self):
         """Test torch read with various combinations of splits and num_workers."""
 
