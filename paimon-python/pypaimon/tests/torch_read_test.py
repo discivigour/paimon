@@ -206,7 +206,6 @@ class TorchReadTest(unittest.TestCase):
 
     def test_torch_read_with_various_splits_and_workers(self):
         """Test torch read with various combinations of splits and num_workers."""
-        from torch.utils.data import DataLoader
 
         # Create a partitioned table to generate multiple splits
         schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
