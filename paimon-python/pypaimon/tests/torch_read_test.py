@@ -357,17 +357,11 @@ class TorchReadTest(unittest.TestCase):
     #     print(f"\n{'=' * 60}")
     #     print("✓ All test cases passed!")
     #     print(f"{'=' * 60}\n")
-
     def test_torch_read_with1(self):
-        """Test torch read with various combinations of splits and num_workers."""
-
-        # Create a partitioned table to generate multiple splits
         schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
-        self.catalog.create_table('default.test_multi_splits1', schema, False)
-        table = self.catalog.get_table('default.test_multi_splits1')
+        self.catalog.create_table('default.test_torch_read2', schema, False)
+        table = self.catalog.get_table('default.test_torch_read2')
         self._write_test_table(table)
-
-        num_workers = 2
 
         read_builder = table.new_read_builder()
         table_scan = read_builder.new_scan()
@@ -377,20 +371,67 @@ class TorchReadTest(unittest.TestCase):
         dataloader = DataLoader(
             dataset,
             batch_size=2,
-            num_workers=num_workers,
+            num_workers=2,
             shuffle=False
         )
 
-        # Collect all data
+        # Collect all data from dataloader
         all_user_ids = []
+        all_behaviors = []
         for batch_idx, batch_data in enumerate(dataloader):
             user_ids = batch_data['user_id'].tolist()
+            behaviors = batch_data['behavior']
             all_user_ids.extend(user_ids)
+            all_behaviors.extend(behaviors)
 
-        # Verify all data is read
-        a = sorted(all_user_ids)
+        # Sort by user_id for comparison
+        sorted_data = sorted(zip(all_user_ids, all_behaviors), key=lambda x: x[0])
+        sorted_user_ids = [x[0] for x in sorted_data]
+        sorted_behaviors = [x[1] for x in sorted_data]
+
+        # Expected data (sorted by user_id)
         expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.assertEqual(a, expected_user_ids)
+        expected_behaviors = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+        # Verify results
+        self.assertEqual(sorted_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {sorted_user_ids}")
+        self.assertEqual(sorted_behaviors, expected_behaviors,
+                         f"Behaviors mismatch. Expected {expected_behaviors}, got {sorted_behaviors}")
+
+        print(f"✓ Test passed: Successfully read {len(all_user_ids)} rows with correct data")
+
+    # def test_torch_read_with1(self):
+    #     """Test torch read with various combinations of splits and num_workers."""
+    #
+    #     # Create a partitioned table to generate multiple splits
+    #     schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
+    #     self.catalog.create_table('default.test_multi_splits1', schema, False)
+    #     table = self.catalog.get_table('default.test_multi_splits1')
+    #     self._write_test_table(table)
+    #
+    #     read_builder = table.new_read_builder()
+    #     table_scan = read_builder.new_scan()
+    #     table_read = read_builder.new_read()
+    #     splits = table_scan.plan().splits()
+    #     dataset = table_read.to_torch(splits, streaming=True)
+    #     dataloader = DataLoader(
+    #         dataset,
+    #         batch_size=2,
+    #         num_workers=2,
+    #         shuffle=False
+    #     )
+    #
+    #     # Collect all data
+    #     all_user_ids = []
+    #     for batch_idx, batch_data in enumerate(dataloader):
+    #         user_ids = batch_data['user_id'].tolist()
+    #         all_user_ids.extend(user_ids)
+    #
+    #     # Verify all data is read
+    #     a = sorted(all_user_ids)
+    #     expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    #     self.assertEqual(a, expected_user_ids)
 
     def test_torch_read_with_v(self):
         """Test torch read with various combinations of splits and num_workers."""
