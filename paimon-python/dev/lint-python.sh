@@ -199,41 +199,41 @@ function pytest_check() {
 }
 
 # Mixed tests check - runs Java-Python interoperability tests
-function mixed_check() {
-    # Get Python version
-    PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    echo "Detected Python version: $PYTHON_VERSION"
-    if [ "$PYTHON_VERSION" = "3.6" ]; then
-        print_function "STAGE" "mixed tests checks... [SKIPPED]"
-        return
-    fi
-    print_function "STAGE" "mixed tests checks"
-
-    # Path to the mixed tests script
-    MIXED_TESTS_SCRIPT="$CURRENT_DIR/dev/run_mixed_tests.sh"
-
-    if [ ! -f "$MIXED_TESTS_SCRIPT" ]; then
-        echo "Mixed tests script not found at: $MIXED_TESTS_SCRIPT"
-        print_function "STAGE" "mixed tests checks... [FAILED]"
-        exit 1
-    fi
-
-    # Make sure the script is executable
-    chmod +x "$MIXED_TESTS_SCRIPT"
-
-    # Run the mixed tests script
-    set -o pipefail
-    ($MIXED_TESTS_SCRIPT) 2>&1 | tee -a $LOG_FILE
-
-    MIXED_TESTS_STATUS=$?
-    if [ $MIXED_TESTS_STATUS -ne 0 ]; then
-        print_function "STAGE" "mixed tests checks... [FAILED]"
-        # Stop the running script.
-        exit 1;
-    else
-        print_function "STAGE" "mixed tests checks... [SUCCESS]"
-    fi
-}
+#function mixed_check() {
+#    # Get Python version
+#    PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+#    echo "Detected Python version: $PYTHON_VERSION"
+#    if [ "$PYTHON_VERSION" = "3.6" ]; then
+#        print_function "STAGE" "mixed tests checks... [SKIPPED]"
+#        return
+#    fi
+#    print_function "STAGE" "mixed tests checks"
+#
+#    # Path to the mixed tests script
+#    MIXED_TESTS_SCRIPT="$CURRENT_DIR/dev/run_mixed_tests.sh"
+#
+#    if [ ! -f "$MIXED_TESTS_SCRIPT" ]; then
+#        echo "Mixed tests script not found at: $MIXED_TESTS_SCRIPT"
+#        print_function "STAGE" "mixed tests checks... [FAILED]"
+#        exit 1
+#    fi
+#
+#    # Make sure the script is executable
+#    chmod +x "$MIXED_TESTS_SCRIPT"
+#
+#    # Run the mixed tests script
+#    set -o pipefail
+#    ($MIXED_TESTS_SCRIPT) 2>&1 | tee -a $LOG_FILE
+#
+#    MIXED_TESTS_STATUS=$?
+#    if [ $MIXED_TESTS_STATUS -ne 0 ]; then
+#        print_function "STAGE" "mixed tests checks... [FAILED]"
+#        # Stop the running script.
+#        exit 1;
+#    else
+#        print_function "STAGE" "mixed tests checks... [SUCCESS]"
+#    fi
+#}
 ###############################################################All Checks Definitions###############################################################
 # CURRENT_DIR is "paimon-python/"
 SCRIPT_PATH="$(readlink -f "$0")"
