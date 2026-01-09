@@ -466,260 +466,259 @@ class TorchReadTest(unittest.TestCase):
         print(f"  Total batches: {batch_count}")
         print(f"{'=' * 60}\n")
 
-    #
-    # def test_torch_read_large_pk_table(self):
-    #     """Test torch read with large data volume on primary key table."""
-    #
-    #     # Create PK table
-    #     schema = Schema.from_pyarrow_schema(
-    #         self.pa_schema,
-    #         primary_keys=['user_id'],
-    #         partition_keys=['dt'],
-    #         options={'bucket': '4'}
-    #     )
-    #     self.catalog.create_table('default.test_large_pk', schema, False)
-    #     table = self.catalog.get_table('default.test_large_pk')
-    #
-    #     # Write large amount of data
-    #     write_builder = table.new_batch_write_builder()
-    #     total_rows = 100000  # 10万行数据
-    #     batch_size = 10000
-    #     num_batches = total_rows // batch_size
-    #
-    #     print(f"\n{'=' * 60}")
-    #     print(f"Writing {total_rows} rows to PK table...")
-    #     print(f"{'=' * 60}")
-    #
-    #     for batch_idx in range(num_batches):
-    #         table_write = write_builder.new_write()
-    #         table_commit = write_builder.new_commit()
-    #
-    #         start_id = batch_idx * batch_size + 1
-    #         end_id = start_id + batch_size
-    #
-    #         data = {
-    #             'user_id': list(range(start_id, end_id)),
-    #             'item_id': [1000 + i for i in range(start_id, end_id)],
-    #             'behavior': [chr(ord('a') + (i % 26)) for i in range(batch_size)],
-    #             'dt': [f'p{i % 4}' for i in range(batch_size)],
-    #         }
-    #         pa_table = pa.Table.from_pydict(data, schema=self.pa_schema)
-    #         table_write.write_arrow(pa_table)
-    #         table_commit.commit(table_write.prepare_commit())
-    #         table_write.close()
-    #         table_commit.close()
-    #
-    #         if (batch_idx + 1) % 2 == 0:
-    #             print(f"  Written {(batch_idx + 1) * batch_size} rows...")
-    #
-    #     # Read data using torch
-    #     print(f"\nReading {total_rows} rows using Torch DataLoader...")
-    #
-    #     read_builder = table.new_read_builder()
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #
-    #     print(f"Total splits: {len(splits)}")
-    #
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=1000,
-    #         num_workers=4,
-    #         shuffle=False
-    #     )
-    #
-    #     # Collect all data
-    #     all_user_ids = []
-    #     batch_count = 0
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         batch_count += 1
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #         if (batch_idx + 1) % 20 == 0:
-    #             print(f"  Read {len(all_user_ids)} rows...")
-    #
-    #     all_user_ids.sort()
-    #     # Verify data
-    #     self.assertEqual(len(all_user_ids), total_rows,
-    #                      f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
-    #
-    #     self.assertEqual(all_user_ids, list(range(1, total_rows + 1)),
-    #                      f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
-    #
-    #     print(f"\n{'=' * 60}")
-    #     print("✓ Large PK table test passed!")
-    #     print(f"  Total rows: {total_rows}")
-    #     print(f"  Total batches: {batch_count}")
-    #     print("  Primary key uniqueness: ✓")
-    #     print(f"{'=' * 60}\n")
-    #
-    # def test_torch_read_with_predicate(self):
-    #     """Test torch read with predicate filtering."""
-    #
-    #     schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
-    #     self.catalog.create_table('default.test_predicate', schema, False)
-    #     table = self.catalog.get_table('default.test_predicate')
-    #     self._write_test_table(table)
-    #
-    #     # Test case 1: Filter by user_id > 4
-    #     print(f"\n{'=' * 60}")
-    #     print("Test Case 1: user_id > 4")
-    #     print(f"{'=' * 60}")
-    #     predicate_builder = table.new_read_builder().new_predicate_builder()
-    #
-    #     predicate = predicate_builder.greater_than('user_id', 4)
-    #     read_builder = table.new_read_builder().with_filter(predicate)
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
-    #
-    #     all_user_ids = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #     all_user_ids.sort()
-    #     expected_user_ids = [5, 6, 7, 8]
-    #     self.assertEqual(all_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-    #     print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
-    #
-    #     # Test case 2: Filter by user_id <= 3
-    #     print(f"\n{'=' * 60}")
-    #     print("Test Case 2: user_id <= 3")
-    #     print(f"{'=' * 60}")
-    #
-    #     predicate = predicate_builder.less_or_equal('user_id', 3)
-    #     read_builder = table.new_read_builder().with_filter(predicate)
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
-    #
-    #     all_user_ids = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #     all_user_ids.sort()
-    #     expected_user_ids = [1, 2, 3]
-    #     self.assertEqual(all_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-    #     print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
-    #
-    #     # Test case 3: Filter by behavior = 'a'
-    #     print(f"\n{'=' * 60}")
-    #     print("Test Case 3: behavior = 'a'")
-    #     print(f"{'=' * 60}")
-    #
-    #     predicate = predicate_builder.equal('behavior', 'a')
-    #     read_builder = table.new_read_builder().with_filter(predicate)
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
-    #
-    #     all_user_ids = []
-    #     all_behaviors = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         behaviors = batch_data['behavior']
-    #         all_user_ids.extend(user_ids)
-    #         all_behaviors.extend(behaviors)
-    #
-    #     expected_user_ids = [1]
-    #     expected_behaviors = ['a']
-    #     self.assertEqual(all_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-    #     self.assertEqual(all_behaviors, expected_behaviors,
-    #                      f"Behaviors mismatch. Expected {expected_behaviors}, got {all_behaviors}")
-    #     print(f"✓ Filtered {len(all_user_ids)} rows: user_ids={all_user_ids}, behaviors={all_behaviors}")
-    #
-    #     # Test case 4: Filter by user_id IN (2, 4, 6)
-    #     print(f"\n{'=' * 60}")
-    #     print("Test Case 4: user_id IN (2, 4, 6)")
-    #     print(f"{'=' * 60}")
-    #
-    #     predicate = predicate_builder.is_in('user_id', [2, 4, 6])
-    #     read_builder = table.new_read_builder().with_filter(predicate)
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
-    #
-    #     all_user_ids = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #     all_user_ids.sort()
-    #     expected_user_ids = [2, 4, 6]
-    #     self.assertEqual(all_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-    #     print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
-    #
-    #     # Test case 5: Combined filter (user_id > 2 AND user_id < 7)
-    #     print(f"\n{'=' * 60}")
-    #     print("Test Case 5: user_id > 2 AND user_id < 7")
-    #     print(f"{'=' * 60}")
-    #
-    #     predicate1 = predicate_builder.greater_than('user_id', 2)
-    #     predicate2 = predicate_builder.less_than('user_id', 7)
-    #     combined_predicate = predicate_builder.and_predicates([predicate1, predicate2])
-    #     read_builder = table.new_read_builder().with_filter(combined_predicate)
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
-    #
-    #     all_user_ids = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #     all_user_ids.sort()
-    #     expected_user_ids = [3, 4, 5, 6]
-    #     self.assertEqual(all_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-    #     print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
-    #
-    #     print(f"\n{'=' * 60}")
-    #     print("✓ All predicate test cases passed!")
-    #     print(f"{'=' * 60}\n")
+    def test_torch_read_large_pk_table(self):
+        """Test torch read with large data volume on primary key table."""
+
+        # Create PK table
+        schema = Schema.from_pyarrow_schema(
+            self.pa_schema,
+            primary_keys=['user_id'],
+            partition_keys=['dt'],
+            options={'bucket': '4'}
+        )
+        self.catalog.create_table('default.test_large_pk', schema, False)
+        table = self.catalog.get_table('default.test_large_pk')
+
+        # Write large amount of data
+        write_builder = table.new_batch_write_builder()
+        total_rows = 100000  # 10万行数据
+        batch_size = 10000
+        num_batches = total_rows // batch_size
+
+        print(f"\n{'=' * 60}")
+        print(f"Writing {total_rows} rows to PK table...")
+        print(f"{'=' * 60}")
+
+        for batch_idx in range(num_batches):
+            table_write = write_builder.new_write()
+            table_commit = write_builder.new_commit()
+
+            start_id = batch_idx * batch_size + 1
+            end_id = start_id + batch_size
+
+            data = {
+                'user_id': list(range(start_id, end_id)),
+                'item_id': [1000 + i for i in range(start_id, end_id)],
+                'behavior': [chr(ord('a') + (i % 26)) for i in range(batch_size)],
+                'dt': [f'p{i % 4}' for i in range(batch_size)],
+            }
+            pa_table = pa.Table.from_pydict(data, schema=self.pa_schema)
+            table_write.write_arrow(pa_table)
+            table_commit.commit(table_write.prepare_commit())
+            table_write.close()
+            table_commit.close()
+
+            if (batch_idx + 1) % 2 == 0:
+                print(f"  Written {(batch_idx + 1) * batch_size} rows...")
+
+        # Read data using torch
+        print(f"\nReading {total_rows} rows using Torch DataLoader...")
+
+        read_builder = table.new_read_builder()
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+
+        print(f"Total splits: {len(splits)}")
+
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=1000,
+            num_workers=4,
+            shuffle=False
+        )
+
+        # Collect all data
+        all_user_ids = []
+        batch_count = 0
+        for batch_idx, batch_data in enumerate(dataloader):
+            batch_count += 1
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+            if (batch_idx + 1) % 20 == 0:
+                print(f"  Read {len(all_user_ids)} rows...")
+
+        all_user_ids.sort()
+        # Verify data
+        self.assertEqual(len(all_user_ids), total_rows,
+                         f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
+
+        self.assertEqual(all_user_ids, list(range(1, total_rows + 1)),
+                         f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
+
+        print(f"\n{'=' * 60}")
+        print("✓ Large PK table test passed!")
+        print(f"  Total rows: {total_rows}")
+        print(f"  Total batches: {batch_count}")
+        print("  Primary key uniqueness: ✓")
+        print(f"{'=' * 60}\n")
+
+    def test_torch_read_with_predicate(self):
+        """Test torch read with predicate filtering."""
+
+        schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
+        self.catalog.create_table('default.test_predicate', schema, False)
+        table = self.catalog.get_table('default.test_predicate')
+        self._write_test_table(table)
+
+        # Test case 1: Filter by user_id > 4
+        print(f"\n{'=' * 60}")
+        print("Test Case 1: user_id > 4")
+        print(f"{'=' * 60}")
+        predicate_builder = table.new_read_builder().new_predicate_builder()
+
+        predicate = predicate_builder.greater_than('user_id', 4)
+        read_builder = table.new_read_builder().with_filter(predicate)
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
+
+        all_user_ids = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+        all_user_ids.sort()
+        expected_user_ids = [5, 6, 7, 8]
+        self.assertEqual(all_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+        print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
+
+        # Test case 2: Filter by user_id <= 3
+        print(f"\n{'=' * 60}")
+        print("Test Case 2: user_id <= 3")
+        print(f"{'=' * 60}")
+
+        predicate = predicate_builder.less_or_equal('user_id', 3)
+        read_builder = table.new_read_builder().with_filter(predicate)
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
+
+        all_user_ids = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+        all_user_ids.sort()
+        expected_user_ids = [1, 2, 3]
+        self.assertEqual(all_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+        print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
+
+        # Test case 3: Filter by behavior = 'a'
+        print(f"\n{'=' * 60}")
+        print("Test Case 3: behavior = 'a'")
+        print(f"{'=' * 60}")
+
+        predicate = predicate_builder.equal('behavior', 'a')
+        read_builder = table.new_read_builder().with_filter(predicate)
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
+
+        all_user_ids = []
+        all_behaviors = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            behaviors = batch_data['behavior']
+            all_user_ids.extend(user_ids)
+            all_behaviors.extend(behaviors)
+
+        expected_user_ids = [1]
+        expected_behaviors = ['a']
+        self.assertEqual(all_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+        self.assertEqual(all_behaviors, expected_behaviors,
+                         f"Behaviors mismatch. Expected {expected_behaviors}, got {all_behaviors}")
+        print(f"✓ Filtered {len(all_user_ids)} rows: user_ids={all_user_ids}, behaviors={all_behaviors}")
+
+        # Test case 4: Filter by user_id IN (2, 4, 6)
+        print(f"\n{'=' * 60}")
+        print("Test Case 4: user_id IN (2, 4, 6)")
+        print(f"{'=' * 60}")
+
+        predicate = predicate_builder.is_in('user_id', [2, 4, 6])
+        read_builder = table.new_read_builder().with_filter(predicate)
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
+
+        all_user_ids = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+        all_user_ids.sort()
+        expected_user_ids = [2, 4, 6]
+        self.assertEqual(all_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+        print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
+
+        # Test case 5: Combined filter (user_id > 2 AND user_id < 7)
+        print(f"\n{'=' * 60}")
+        print("Test Case 5: user_id > 2 AND user_id < 7")
+        print(f"{'=' * 60}")
+
+        predicate1 = predicate_builder.greater_than('user_id', 2)
+        predicate2 = predicate_builder.less_than('user_id', 7)
+        combined_predicate = predicate_builder.and_predicates([predicate1, predicate2])
+        read_builder = table.new_read_builder().with_filter(combined_predicate)
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
+
+        all_user_ids = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+        all_user_ids.sort()
+        expected_user_ids = [3, 4, 5, 6]
+        self.assertEqual(all_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+        print(f"✓ Filtered {len(all_user_ids)} rows: {all_user_ids}")
+
+        print(f"\n{'=' * 60}")
+        print("✓ All predicate test cases passed!")
+        print(f"{'=' * 60}\n")
 
     def _write_test_table(self, table):
         write_builder = table.new_batch_write_builder()
