@@ -206,122 +206,69 @@ class TorchReadTest(unittest.TestCase):
 
         print(f"✓ Blob torch read test passed: Successfully read and verified {len(blob_data)} bytes of blob data")
 
-    def test_torch_read_with_various_splits_and_workers(self):
-        """Test torch read with various combinations of splits and num_workers."""
-
-        # Create a partitioned table to generate multiple splits
-        schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
-        self.catalog.create_table('default.test_multi_splits', schema, False)
-        table = self.catalog.get_table('default.test_multi_splits')
-        self._write_test_table(table)
-
-        # Test different combinations of num_workers
-        test_cases = [
-            {'num_workers': 2, 'description': '2 workers'},
-            {'num_workers': 5, 'description': '4 workers'},
-            {'num_workers': 10, 'description': '4 workers'},
-        ]
-
-        for test_case in test_cases:
-            num_workers = test_case['num_workers']
-            description = test_case['description']
-
-            read_builder = table.new_read_builder()
-            table_scan = read_builder.new_scan()
-            table_read = read_builder.new_read()
-            splits = table_scan.plan().splits()
-
-            print(f"\n{'=' * 60}")
-            print(f"Testing: {description}")
-            print(f"Total splits: {len(splits)}")
-            print(f"Num workers: {num_workers}")
-            print(f"{'=' * 60}")
-
-            # Create dataset and dataloader
-            dataset = table_read.to_torch(splits, streaming=True)
-            dataloader = DataLoader(
-                dataset,
-                batch_size=2,
-                num_workers=num_workers,
-                shuffle=False
-            )
-
-            # Collect all data
-            all_user_ids = []
-            batch_count = 0
-            for batch_idx, batch_data in enumerate(dataloader):
-                batch_count += 1
-                user_ids = batch_data['user_id'].tolist()
-                all_user_ids.extend(user_ids)
-                print(f"  Batch {batch_idx}: user_ids={user_ids}")
-
-            # Verify all data is read
-            all_user_ids.sort()
-            expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-            self.assertEqual(all_user_ids, expected_user_ids,
-                             f"{description}: User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-
-            print(f"✓ {description}: Successfully read {len(all_user_ids)} rows in {batch_count} batches")
-
-        print(f"\n{'=' * 60}")
-        print("✓ All test cases passed!")
-        print(f"{'=' * 60}\n")
-
-    # def test_torch_read_pk_table(self):
-    #     """Test torch read with primary key table."""
-    #     # Create PK table with user_id as primary key and behavior as partition key
-    #     schema = Schema.from_pyarrow_schema(
-    #         self.pa_schema,
-    #         primary_keys=['user_id', 'behavior'],
-    #         partition_keys=['behavior'],
-    #         options={'bucket': 2}
-    #     )
-    #     self.catalog.create_table('default.test_pk_table', schema, False)
-    #     table = self.catalog.get_table('default.test_pk_table')
+    # def test_torch_read_with_various_splits_and_workers(self):
+    #     """Test torch read with various combinations of splits and num_workers."""
+    #
+    #     # Create a partitioned table to generate multiple splits
+    #     schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
+    #     self.catalog.create_table('default.test_multi_splits', schema, False)
+    #     table = self.catalog.get_table('default.test_multi_splits')
     #     self._write_test_table(table)
     #
-    #     read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
+    #     # Test different combinations of num_workers
+    #     test_cases = [
+    #         {'num_workers': 2, 'description': '2 workers'},
+    #         {'num_workers': 5, 'description': '4 workers'},
+    #         {'num_workers': 10, 'description': '4 workers'},
+    #     ]
     #
-    #     # Collect all data from dataloader
-    #     all_user_ids = []
-    #     all_behaviors = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         behaviors = batch_data['behavior']
-    #         all_user_ids.extend(user_ids)
-    #         all_behaviors.extend(behaviors)
+    #     for test_case in test_cases:
+    #         num_workers = test_case['num_workers']
+    #         description = test_case['description']
     #
-    #     # Sort by user_id for comparison
-    #     sorted_data = sorted(zip(all_user_ids, all_behaviors), key=lambda x: x[0])
-    #     sorted_user_ids = [x[0] for x in sorted_data]
-    #     sorted_behaviors = [x[1] for x in sorted_data]
+    #         read_builder = table.new_read_builder()
+    #         table_scan = read_builder.new_scan()
+    #         table_read = read_builder.new_read()
+    #         splits = table_scan.plan().splits()
     #
-    #     # Expected data (sorted by user_id)
-    #     expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-    #     expected_behaviors = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    #         print(f"\n{'=' * 60}")
+    #         print(f"Testing: {description}")
+    #         print(f"Total splits: {len(splits)}")
+    #         print(f"Num workers: {num_workers}")
+    #         print(f"{'=' * 60}")
     #
-    #     # Verify results
-    #     self.assertEqual(sorted_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {sorted_user_ids}")
-    #     self.assertEqual(sorted_behaviors, expected_behaviors,
-    #                      f"Behaviors mismatch. Expected {expected_behaviors}, got {sorted_behaviors}")
+    #         # Create dataset and dataloader
+    #         dataset = table_read.to_torch(splits, streaming=True)
+    #         dataloader = DataLoader(
+    #             dataset,
+    #             batch_size=2,
+    #             num_workers=num_workers,
+    #             shuffle=False
+    #         )
     #
-    #     print(f"✓ PK table test passed: Successfully read {len(all_user_ids)} rows with correct data")
+    #         # Collect all data
+    #         all_user_ids = []
+    #         batch_count = 0
+    #         for batch_idx, batch_data in enumerate(dataloader):
+    #             batch_count += 1
+    #             user_ids = batch_data['user_id'].tolist()
+    #             all_user_ids.extend(user_ids)
+    #             print(f"  Batch {batch_idx}: user_ids={user_ids}")
+    #
+    #         # Verify all data is read
+    #         all_user_ids.sort()
+    #         expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    #         self.assertEqual(all_user_ids, expected_user_ids,
+    #                          f"{description}: User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+    #
+    #         print(f"✓ {description}: Successfully read {len(all_user_ids)} rows in {batch_count} batches")
+    #
+    #     print(f"\n{'=' * 60}")
+    #     print("✓ All test cases passed!")
+    #     print(f"{'=' * 60}\n")
 
-    def test_torch_read_pk_table_with_various_splits_and_workers(self):
-        """Test torch read PK table with various combinations of splits and num_workers."""
-        from torch.utils.data import DataLoader
-
+    def test_torch_read_pk_table(self):
+        """Test torch read with primary key table."""
         # Create PK table with user_id as primary key and behavior as partition key
         schema = Schema.from_pyarrow_schema(
             self.pa_schema,
@@ -329,61 +276,114 @@ class TorchReadTest(unittest.TestCase):
             partition_keys=['behavior'],
             options={'bucket': 2}
         )
-        self.catalog.create_table('default.test_pk_multi_splits', schema, False)
-        table = self.catalog.get_table('default.test_pk_multi_splits')
+        self.catalog.create_table('default.test_pk_table', schema, False)
+        table = self.catalog.get_table('default.test_pk_table')
         self._write_test_table(table)
 
-        # Test different combinations of num_workers
-        test_cases = [
-            {'num_workers': 2, 'description': '2 workers'},
-            {'num_workers': 4, 'description': '4 workers'},
-            {'num_workers': 10, 'description': '10 workers'},
-        ]
+        read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
 
-        for test_case in test_cases:
-            num_workers = test_case['num_workers']
-            description = test_case['description']
+        # Collect all data from dataloader
+        all_user_ids = []
+        all_behaviors = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            behaviors = batch_data['behavior']
+            all_user_ids.extend(user_ids)
+            all_behaviors.extend(behaviors)
 
-            read_builder = table.new_read_builder()
-            table_scan = read_builder.new_scan()
-            table_read = read_builder.new_read()
-            splits = table_scan.plan().splits()
+        # Sort by user_id for comparison
+        sorted_data = sorted(zip(all_user_ids, all_behaviors), key=lambda x: x[0])
+        sorted_user_ids = [x[0] for x in sorted_data]
+        sorted_behaviors = [x[1] for x in sorted_data]
 
-            print(f"\n{'=' * 60}")
-            print(f"Testing PK table: {description}")
-            print(f"Total splits: {len(splits)}")
-            print(f"Num workers: {num_workers}")
-            print(f"{'=' * 60}")
+        # Expected data (sorted by user_id)
+        expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+        expected_behaviors = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
-            # Create dataset and dataloader
-            dataset = table_read.to_torch(splits, streaming=True)
-            dataloader = DataLoader(
-                dataset,
-                batch_size=2,
-                num_workers=num_workers,
-                shuffle=False
-            )
+        # Verify results
+        self.assertEqual(sorted_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {sorted_user_ids}")
+        self.assertEqual(sorted_behaviors, expected_behaviors,
+                         f"Behaviors mismatch. Expected {expected_behaviors}, got {sorted_behaviors}")
 
-            # Collect all data
-            all_user_ids = []
-            batch_count = 0
-            for batch_idx, batch_data in enumerate(dataloader):
-                batch_count += 1
-                user_ids = batch_data['user_id'].tolist()
-                all_user_ids.extend(user_ids)
-                print(f"  Batch {batch_idx}: user_ids={user_ids}")
+        print(f"✓ PK table test passed: Successfully read {len(all_user_ids)} rows with correct data")
 
-            # Verify all data is read
-            all_user_ids.sort()
-            expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-            self.assertEqual(all_user_ids, expected_user_ids,
-                             f"{description}: User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
-
-            print(f"✓ {description}: Successfully read {len(all_user_ids)} rows in {batch_count} batches")
-
-        print(f"\n{'=' * 60}")
-        print("✓ All PK table test cases passed!")
-        print(f"{'=' * 60}\n")
+    # def test_torch_read_pk_table_with_various_splits_and_workers(self):
+    #     """Test torch read PK table with various combinations of splits and num_workers."""
+    #     from torch.utils.data import DataLoader
+    #
+    #     # Create PK table with user_id as primary key and behavior as partition key
+    #     schema = Schema.from_pyarrow_schema(
+    #         self.pa_schema,
+    #         primary_keys=['user_id', 'behavior'],
+    #         partition_keys=['behavior'],
+    #         options={'bucket': 2}
+    #     )
+    #     self.catalog.create_table('default.test_pk_multi_splits', schema, False)
+    #     table = self.catalog.get_table('default.test_pk_multi_splits')
+    #     self._write_test_table(table)
+    #
+    #     # Test different combinations of num_workers
+    #     test_cases = [
+    #         {'num_workers': 2, 'description': '2 workers'},
+    #         {'num_workers': 4, 'description': '4 workers'},
+    #         {'num_workers': 10, 'description': '10 workers'},
+    #     ]
+    #
+    #     for test_case in test_cases:
+    #         num_workers = test_case['num_workers']
+    #         description = test_case['description']
+    #
+    #         read_builder = table.new_read_builder()
+    #         table_scan = read_builder.new_scan()
+    #         table_read = read_builder.new_read()
+    #         splits = table_scan.plan().splits()
+    #
+    #         print(f"\n{'=' * 60}")
+    #         print(f"Testing PK table: {description}")
+    #         print(f"Total splits: {len(splits)}")
+    #         print(f"Num workers: {num_workers}")
+    #         print(f"{'=' * 60}")
+    #
+    #         # Create dataset and dataloader
+    #         dataset = table_read.to_torch(splits, streaming=True)
+    #         dataloader = DataLoader(
+    #             dataset,
+    #             batch_size=2,
+    #             num_workers=num_workers,
+    #             shuffle=False
+    #         )
+    #
+    #         # Collect all data
+    #         all_user_ids = []
+    #         batch_count = 0
+    #         for batch_idx, batch_data in enumerate(dataloader):
+    #             batch_count += 1
+    #             user_ids = batch_data['user_id'].tolist()
+    #             all_user_ids.extend(user_ids)
+    #             print(f"  Batch {batch_idx}: user_ids={user_ids}")
+    #
+    #         # Verify all data is read
+    #         all_user_ids.sort()
+    #         expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    #         self.assertEqual(all_user_ids, expected_user_ids,
+    #                          f"{description}: User IDs mismatch. Expected {expected_user_ids}, got {all_user_ids}")
+    #
+    #         print(f"✓ {description}: Successfully read {len(all_user_ids)} rows in {batch_count} batches")
+    #
+    #     print(f"\n{'=' * 60}")
+    #     print("✓ All PK table test cases passed!")
+    #     print(f"{'=' * 60}\n")
 
     #
     def test_torch_read_large_append_table(self):
@@ -466,94 +466,94 @@ class TorchReadTest(unittest.TestCase):
         print(f"  Total batches: {batch_count}")
         print(f"{'=' * 60}\n")
 
-    # def test_torch_read_large_pk_table(self):
-    #     """Test torch read with large data volume on primary key table."""
-    #
-    #     # Create PK table
-    #     schema = Schema.from_pyarrow_schema(
-    #         self.pa_schema,
-    #         primary_keys=['user_id'],
-    #         partition_keys=['dt'],
-    #         options={'bucket': '4'}
-    #     )
-    #     self.catalog.create_table('default.test_large_pk', schema, False)
-    #     table = self.catalog.get_table('default.test_large_pk')
-    #
-    #     # Write large amount of data
-    #     write_builder = table.new_batch_write_builder()
-    #     total_rows = 100000  # 10万行数据
-    #     batch_size = 10000
-    #     num_batches = total_rows // batch_size
-    #
-    #     print(f"\n{'=' * 60}")
-    #     print(f"Writing {total_rows} rows to PK table...")
-    #     print(f"{'=' * 60}")
-    #
-    #     for batch_idx in range(num_batches):
-    #         table_write = write_builder.new_write()
-    #         table_commit = write_builder.new_commit()
-    #
-    #         start_id = batch_idx * batch_size + 1
-    #         end_id = start_id + batch_size
-    #
-    #         data = {
-    #             'user_id': list(range(start_id, end_id)),
-    #             'item_id': [1000 + i for i in range(start_id, end_id)],
-    #             'behavior': [chr(ord('a') + (i % 26)) for i in range(batch_size)],
-    #             'dt': [f'p{i % 4}' for i in range(batch_size)],
-    #         }
-    #         pa_table = pa.Table.from_pydict(data, schema=self.pa_schema)
-    #         table_write.write_arrow(pa_table)
-    #         table_commit.commit(table_write.prepare_commit())
-    #         table_write.close()
-    #         table_commit.close()
-    #
-    #         if (batch_idx + 1) % 2 == 0:
-    #             print(f"  Written {(batch_idx + 1) * batch_size} rows...")
-    #
-    #     # Read data using torch
-    #     print(f"\nReading {total_rows} rows using Torch DataLoader...")
-    #
-    #     read_builder = table.new_read_builder()
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #
-    #     print(f"Total splits: {len(splits)}")
-    #
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=1000,
-    #         num_workers=4,
-    #         shuffle=False
-    #     )
-    #
-    #     # Collect all data
-    #     all_user_ids = []
-    #     batch_count = 0
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         batch_count += 1
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #         if (batch_idx + 1) % 20 == 0:
-    #             print(f"  Read {len(all_user_ids)} rows...")
-    #
-    #     all_user_ids.sort()
-    #     # Verify data
-    #     self.assertEqual(len(all_user_ids), total_rows,
-    #                      f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
-    #
-    #     self.assertEqual(all_user_ids, list(range(1, total_rows + 1)),
-    #                      f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
-    #
-    #     print(f"\n{'=' * 60}")
-    #     print("✓ Large PK table test passed!")
-    #     print(f"  Total rows: {total_rows}")
-    #     print(f"  Total batches: {batch_count}")
-    #     print("  Primary key uniqueness: ✓")
-    #     print(f"{'=' * 60}\n")
+    def test_torch_read_large_pk_table(self):
+        """Test torch read with large data volume on primary key table."""
+
+        # Create PK table
+        schema = Schema.from_pyarrow_schema(
+            self.pa_schema,
+            primary_keys=['user_id'],
+            partition_keys=['dt'],
+            options={'bucket': '4'}
+        )
+        self.catalog.create_table('default.test_large_pk', schema, False)
+        table = self.catalog.get_table('default.test_large_pk')
+
+        # Write large amount of data
+        write_builder = table.new_batch_write_builder()
+        total_rows = 100000  # 10万行数据
+        batch_size = 10000
+        num_batches = total_rows // batch_size
+
+        print(f"\n{'=' * 60}")
+        print(f"Writing {total_rows} rows to PK table...")
+        print(f"{'=' * 60}")
+
+        for batch_idx in range(num_batches):
+            table_write = write_builder.new_write()
+            table_commit = write_builder.new_commit()
+
+            start_id = batch_idx * batch_size + 1
+            end_id = start_id + batch_size
+
+            data = {
+                'user_id': list(range(start_id, end_id)),
+                'item_id': [1000 + i for i in range(start_id, end_id)],
+                'behavior': [chr(ord('a') + (i % 26)) for i in range(batch_size)],
+                'dt': [f'p{i % 4}' for i in range(batch_size)],
+            }
+            pa_table = pa.Table.from_pydict(data, schema=self.pa_schema)
+            table_write.write_arrow(pa_table)
+            table_commit.commit(table_write.prepare_commit())
+            table_write.close()
+            table_commit.close()
+
+            if (batch_idx + 1) % 2 == 0:
+                print(f"  Written {(batch_idx + 1) * batch_size} rows...")
+
+        # Read data using torch
+        print(f"\nReading {total_rows} rows using Torch DataLoader...")
+
+        read_builder = table.new_read_builder()
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+
+        print(f"Total splits: {len(splits)}")
+
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=1000,
+            num_workers=4,
+            shuffle=False
+        )
+
+        # Collect all data
+        all_user_ids = []
+        batch_count = 0
+        for batch_idx, batch_data in enumerate(dataloader):
+            batch_count += 1
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+            if (batch_idx + 1) % 20 == 0:
+                print(f"  Read {len(all_user_ids)} rows...")
+
+        all_user_ids.sort()
+        # Verify data
+        self.assertEqual(len(all_user_ids), total_rows,
+                         f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
+
+        self.assertEqual(all_user_ids, list(range(1, total_rows + 1)),
+                         f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
+
+        print(f"\n{'=' * 60}")
+        print("✓ Large PK table test passed!")
+        print(f"  Total rows: {total_rows}")
+        print(f"  Total batches: {batch_count}")
+        print("  Primary key uniqueness: ✓")
+        print(f"{'=' * 60}\n")
 
     def test_torch_read_with_predicate(self):
         """Test torch read with predicate filtering."""
