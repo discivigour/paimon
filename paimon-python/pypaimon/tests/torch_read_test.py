@@ -24,6 +24,7 @@ from parameterized import parameterized
 from torch.utils.data import DataLoader
 
 from pypaimon import CatalogFactory, Schema
+from pypaimon.table.file_store_table import FileStoreTable
 
 
 class TorchReadTest(unittest.TestCase):
@@ -266,56 +267,56 @@ class TorchReadTest(unittest.TestCase):
         print("✓ All test cases passed!")
         print(f"{'=' * 60}\n")
 
-    # def test_torch_read_pk_table(self):
-    #     """Test torch read with primary key table."""
-    #     # Create PK table with user_id as primary key and behavior as partition key
-    #     schema = Schema.from_pyarrow_schema(
-    #         self.pa_schema,
-    #         primary_keys=['user_id', 'behavior'],
-    #         partition_keys=['behavior'],
-    #         options={'bucket': 2}
-    #     )
-    #     self.catalog.create_table('default.test_pk_table', schema, False)
-    #     table = self.catalog.get_table('default.test_pk_table')
-    #     self._write_test_table(table)
-    #
-    #     read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=2,
-    #         num_workers=0,
-    #         shuffle=False
-    #     )
-    #
-    #     # Collect all data from dataloader
-    #     all_user_ids = []
-    #     all_behaviors = []
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         user_ids = batch_data['user_id'].tolist()
-    #         behaviors = batch_data['behavior']
-    #         all_user_ids.extend(user_ids)
-    #         all_behaviors.extend(behaviors)
-    #
-    #     # Sort by user_id for comparison
-    #     sorted_data = sorted(zip(all_user_ids, all_behaviors), key=lambda x: x[0])
-    #     sorted_user_ids = [x[0] for x in sorted_data]
-    #     sorted_behaviors = [x[1] for x in sorted_data]
-    #
-    #     # Expected data (sorted by user_id)
-    #     expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-    #     expected_behaviors = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    #
-    #     # Verify results
-    #     self.assertEqual(sorted_user_ids, expected_user_ids,
-    #                      f"User IDs mismatch. Expected {expected_user_ids}, got {sorted_user_ids}")
-    #     self.assertEqual(sorted_behaviors, expected_behaviors,
-    #                      f"Behaviors mismatch. Expected {expected_behaviors}, got {sorted_behaviors}")
-    #
-    #     print(f"✓ PK table test passed: Successfully read {len(all_user_ids)} rows with correct data")
+    def test_torch_read_pk_table(self):
+        """Test torch read with primary key table."""
+        # Create PK table with user_id as primary key and behavior as partition key
+        schema = Schema.from_pyarrow_schema(
+            self.pa_schema,
+            primary_keys=['user_id', 'behavior'],
+            partition_keys=['behavior'],
+            options={'bucket': 2}
+        )
+        self.catalog.create_table('default.test_pk_table', schema, False)
+        table = self.catalog.get_table('default.test_pk_table')
+        self._write_test_table(table)
+
+        read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=0,
+            shuffle=False
+        )
+
+        # Collect all data from dataloader
+        all_user_ids = []
+        all_behaviors = []
+        for batch_idx, batch_data in enumerate(dataloader):
+            user_ids = batch_data['user_id'].tolist()
+            behaviors = batch_data['behavior']
+            all_user_ids.extend(user_ids)
+            all_behaviors.extend(behaviors)
+
+        # Sort by user_id for comparison
+        sorted_data = sorted(zip(all_user_ids, all_behaviors), key=lambda x: x[0])
+        sorted_user_ids = [x[0] for x in sorted_data]
+        sorted_behaviors = [x[1] for x in sorted_data]
+
+        # Expected data (sorted by user_id)
+        expected_user_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+        expected_behaviors = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+        # Verify results
+        self.assertEqual(sorted_user_ids, expected_user_ids,
+                         f"User IDs mismatch. Expected {expected_user_ids}, got {sorted_user_ids}")
+        self.assertEqual(sorted_behaviors, expected_behaviors,
+                         f"Behaviors mismatch. Expected {expected_behaviors}, got {sorted_behaviors}")
+
+        print(f"✓ PK table test passed: Successfully read {len(all_user_ids)} rows with correct data")
 
     def test_torch_read_pk_table_with_various_splits_and_workers(self):
         """Test torch read PK table with various combinations of splits and num_workers."""
