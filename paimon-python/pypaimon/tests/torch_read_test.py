@@ -386,85 +386,86 @@ class TorchReadTest(unittest.TestCase):
         print(f"{'=' * 60}\n")
 
     #
-    # def test_torch_read_large_append_table(self):
-    #     """Test torch read with large data volume on append-only table."""
-    #     # Create append-only table
-    #     schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['dt'])
-    #     self.catalog.create_table('default.test_large_append', schema, False)
-    #     table = self.catalog.get_table('default.test_large_append')
-    #
-    #     # Write large amount of data
-    #     write_builder = table.new_batch_write_builder()
-    #     total_rows = 100000  # 10万行数据
-    #     batch_size = 10000
-    #     num_batches = total_rows // batch_size
-    #
-    #     print(f"\n{'=' * 60}")
-    #     print(f"Writing {total_rows} rows to append-only table...")
-    #     print(f"{'=' * 60}")
-    #
-    #     for batch_idx in range(num_batches):
-    #         table_write = write_builder.new_write()
-    #         table_commit = write_builder.new_commit()
-    #
-    #         start_id = batch_idx * batch_size + 1
-    #         end_id = start_id + batch_size
-    #
-    #         data = {
-    #             'user_id': list(range(start_id, end_id)),
-    #             'item_id': [1000 + i for i in range(start_id, end_id)],
-    #             'behavior': [chr(ord('a') + (i % 26)) for i in range(batch_size)],
-    #             'dt': [f'p{i % 4}' for i in range(batch_size)],
-    #         }
-    #         pa_table = pa.Table.from_pydict(data, schema=self.pa_schema)
-    #         table_write.write_arrow(pa_table)
-    #         table_commit.commit(table_write.prepare_commit())
-    #         table_write.close()
-    #         table_commit.close()
-    #
-    #         if (batch_idx + 1) % 2 == 0:
-    #             print(f"  Written {(batch_idx + 1) * batch_size} rows...")
-    #
-    #     # Read data using torch
-    #     print(f"\nReading {total_rows} rows using Torch DataLoader...")
-    #
-    #     read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
-    #     table_scan = read_builder.new_scan()
-    #     table_read = read_builder.new_read()
-    #     splits = table_scan.plan().splits()
-    #
-    #     print(f"Total splits: {len(splits)}")
-    #
-    #     dataset = table_read.to_torch(splits, streaming=True)
-    #     dataloader = DataLoader(
-    #         dataset,
-    #         batch_size=1000,
-    #         num_workers=4,
-    #         shuffle=False
-    #     )
-    #
-    #     # Collect all data
-    #     all_user_ids = []
-    #     batch_count = 0
-    #     for batch_idx, batch_data in enumerate(dataloader):
-    #         batch_count += 1
-    #         user_ids = batch_data['user_id'].tolist()
-    #         all_user_ids.extend(user_ids)
-    #
-    #         if (batch_idx + 1) % 20 == 0:
-    #             print(f"  Read {len(all_user_ids)} rows...")
-    #
-    #     all_user_ids.sort()
-    #     # Verify data
-    #     self.assertEqual(len(all_user_ids), total_rows,
-    #                      f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
-    #     self.assertEqual(all_user_ids, list(range(1, total_rows + 1)),
-    #                      f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
-    #     print(f"\n{'=' * 60}")
-    #     print("✓ Large append table test passed!")
-    #     print(f"  Total rows: {total_rows}")
-    #     print(f"  Total batches: {batch_count}")
-    #     print(f"{'=' * 60}\n")
+    def test_torch_read_large_append_table(self):
+        """Test torch read with large data volume on append-only table."""
+        # Create append-only table
+        schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['dt'])
+        self.catalog.create_table('default.test_large_append', schema, False)
+        table = self.catalog.get_table('default.test_large_append')
+
+        # Write large amount of data
+        write_builder = table.new_batch_write_builder()
+        total_rows = 100000  # 10万行数据
+        batch_size = 10000
+        num_batches = total_rows // batch_size
+
+        print(f"\n{'=' * 60}")
+        print(f"Writing {total_rows} rows to append-only table...")
+        print(f"{'=' * 60}")
+
+        for batch_idx in range(num_batches):
+            table_write = write_builder.new_write()
+            table_commit = write_builder.new_commit()
+
+            start_id = batch_idx * batch_size + 1
+            end_id = start_id + batch_size
+
+            data = {
+                'user_id': list(range(start_id, end_id)),
+                'item_id': [1000 + i for i in range(start_id, end_id)],
+                'behavior': [chr(ord('a') + (i % 26)) for i in range(batch_size)],
+                'dt': [f'p{i % 4}' for i in range(batch_size)],
+            }
+            pa_table = pa.Table.from_pydict(data, schema=self.pa_schema)
+            table_write.write_arrow(pa_table)
+            table_commit.commit(table_write.prepare_commit())
+            table_write.close()
+            table_commit.close()
+
+            if (batch_idx + 1) % 2 == 0:
+                print(f"  Written {(batch_idx + 1) * batch_size} rows...")
+
+        # Read data using torch
+        print(f"\nReading {total_rows} rows using Torch DataLoader...")
+
+        read_builder = table.new_read_builder().with_projection(['user_id', 'behavior'])
+        table_scan = read_builder.new_scan()
+        table_read = read_builder.new_read()
+        splits = table_scan.plan().splits()
+
+        print(f"Total splits: {len(splits)}")
+
+        dataset = table_read.to_torch(splits, streaming=True)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=1000,
+            num_workers=4,
+            shuffle=False
+        )
+
+        # Collect all data
+        all_user_ids = []
+        batch_count = 0
+        for batch_idx, batch_data in enumerate(dataloader):
+            batch_count += 1
+            user_ids = batch_data['user_id'].tolist()
+            all_user_ids.extend(user_ids)
+
+            if (batch_idx + 1) % 20 == 0:
+                print(f"  Read {len(all_user_ids)} rows...")
+
+        all_user_ids.sort()
+        # Verify data
+        self.assertEqual(len(all_user_ids), total_rows,
+                         f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
+        self.assertEqual(all_user_ids, list(range(1, total_rows + 1)),
+                         f"Row count mismatch. Expected {total_rows}, got {len(all_user_ids)}")
+        print(f"\n{'=' * 60}")
+        print("✓ Large append table test passed!")
+        print(f"  Total rows: {total_rows}")
+        print(f"  Total batches: {batch_count}")
+        print(f"{'=' * 60}\n")
+
     #
     # def test_torch_read_large_pk_table(self):
     #     """Test torch read with large data volume on primary key table."""
