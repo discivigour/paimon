@@ -24,7 +24,9 @@ from parameterized import parameterized
 from torch.utils.data import DataLoader
 
 from pypaimon import CatalogFactory, Schema
-from pypaimon.table.file_store_table import FileStoreTable
+
+
+# from pypaimon.table.file_store_table import FileStoreTable
 
 
 class TorchReadTest(unittest.TestCase):
