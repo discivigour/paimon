@@ -179,7 +179,7 @@ function pytest_check() {
         TEST_DIR="pypaimon/tests/py36"
         echo "Running tests for Python 3.6: $TEST_DIR"
     else
-        TEST_DIR="pypaimon/tests/torch_read_test.py --ignore=pypaimon/tests/py36 --ignore=pypaimon/tests/e2e"
+        TEST_DIR="pypaimon/tests/ --ignore=pypaimon/tests/py36 --ignore=pypaimon/tests/e2e"
         echo "Running tests for Python $PYTHON_VERSION (excluding py36): pypaimon/tests/ --ignore=pypaimon/tests/py36"
     fi
 

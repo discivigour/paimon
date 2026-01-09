@@ -91,14 +91,6 @@ jobs:
       #          rm -rf ~/.m2/repository/org/apache/paimon/*/target
       #          df -h
 
-      - name: Check CI Environment Variable
-        shell: bash
-        run: |
-          echo "Checking CI environment variable..."
-          python -c "import os; print('CI environment variable:', os.getenv('CI'))"
-          echo "All environment variables:"
-          env | grep -i ci || echo "No CI-related env vars found"
-
       - name: Install Python dependencies
         shell: bash
         run: |

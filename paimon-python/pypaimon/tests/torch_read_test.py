@@ -52,7 +52,6 @@ class TorchReadTest(unittest.TestCase):
 
     @parameterized.expand([True, False])
     def test_torch_read(self, is_streaming: bool = False):
-        # num_workers = 0 if os.getenv('CI') else 4
         print(os.getenv('CI'))
         schema = Schema.from_pyarrow_schema(self.pa_schema, partition_keys=['user_id'])
         self.catalog.create_table(f'default.test_torch_read_{str(is_streaming)}', schema, False)
@@ -312,7 +311,7 @@ class TorchReadTest(unittest.TestCase):
         dataloader = DataLoader(
             dataset,
             batch_size=1000,
-            num_workers=2,
+            num_workers=0 if os.getenv('CI') else 4,
             shuffle=False
         )
 
@@ -398,7 +397,7 @@ class TorchReadTest(unittest.TestCase):
         dataloader = DataLoader(
             dataset,
             batch_size=1000,
-            num_workers=2,
+            num_workers=0 if os.getenv('CI') else 4,
             shuffle=False
         )
 
